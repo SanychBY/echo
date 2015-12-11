@@ -11,7 +11,7 @@ using namespace std;
 
 unsigned long ipaddr;
 //преобразование IP-адреса
-char SendData[32] = "Data Buffer";
+
 //данные эхо-запроса
 LPVOID ReplyBuffer = NULL;
 //данные эхо-ответа
@@ -32,56 +32,72 @@ int main()
 			WSAGetLastError());
 		return -1;
 	}
-	int ReplySize = sizeof(ICMP_ECHO_REPLY) + sizeof(SendData);
-	//Выделяем память
-	ReplyBuffer = (VOID*)malloc(ReplySize);
+	
+	while (true)
+	{
+		char *ADDR = new char[200];
+		int col = 0;
+		cout << "Введите ip\n> ";
+		cin.getline(ADDR, 200);
+		ipaddr = inet_addr(ADDR);
+		cout << "Количество запросов\n> ";
+		(cin >> col).get();
+		int S = 0;
+		cout << "Размер пакета\n> ";
+		(cin >> S).get();
+		char *SendData = (char *)malloc(S);
+		//for (char *b = SendData;*b;b++)
+		//{
+			//*b = '0';
+		//}
+		cout << _msize(SendData) << endl;
+		int ReplySize = sizeof(ICMP_ECHO_REPLY) + sizeof(SendData);
+		//Выделяем память
+		ReplyBuffer = (VOID*)malloc(ReplySize);
 
-	if (ReplyBuffer == NULL)
-	{
-		printf("\tНевозможно выделить память\n");
-		return -1;
-	}
-	char *ADDR = new char[200];
-	int col = 0;
-	cout << "Введите ip\n> ";
-	cin.getline(ADDR,200);
-	ipaddr = inet_addr(ADDR);
-	cout << "Количество запросов/n> ";
-	(cin >> col).get();
-	for (int i = 0; i < col; i++)
-	{
-		DWORD dwRetVal = IcmpSendEcho(hIcmpFile, ipaddr, SendData,sizeof(SendData), NULL,ReplyBuffer, ReplySize, 1000);
-		if (dwRetVal != 0)
+		if (ReplyBuffer == NULL)
 		{
-			PICMP_ECHO_REPLY pEchoReply = (PICMP_ECHO_REPLY)ReplyBuffer;
-			struct in_addr ReplyAddr;
-			ReplyAddr.S_un.S_addr = pEchoReply->Address;
-			printf("\tПосылка icmp сообщения на %s\n",
-				ADDR);
-			if (dwRetVal > 1) {
-				printf("\tПолучен %ldicmp ответ\n",
-					dwRetVal);
-				printf("\tИнформация:\n");
-			}
-			else {
-				printf("\tПолучен %ld icmp ответ\n",
-					dwRetVal);
-				printf("\tИнформация:\n");
-			}
-			printf("\tПолучено от %s\n",
-				inet_ntoa(ReplyAddr));
-			printf("\t  Статус = %ld\n",
-				pEchoReply->Status);
-			printf("\tВремя отклика  = %ld миллисекунд \n",
-				pEchoReply->RoundTripTime);
-			cout << "------------------------------------------------------" << endl;
-		}
-		else {
-			printf("\tВызов IcmpSendEcho завершился с ошибкой.\n");
-			printf("\tIcmpSendEcho ошибка: %ld\n",
-				WSAGetLastError());
+			printf("\tНевозможно выделить память\n");
 			return -1;
 		}
+		for (int i = 0; i < col; i++)
+		{
+			DWORD dwRetVal = IcmpSendEcho(hIcmpFile, ipaddr, SendData, sizeof(SendData), NULL, ReplyBuffer, ReplySize, 1000);
+			if (dwRetVal != 0)
+			{
+				PICMP_ECHO_REPLY pEchoReply = (PICMP_ECHO_REPLY)ReplyBuffer;
+				struct in_addr ReplyAddr;
+				ReplyAddr.S_un.S_addr = pEchoReply->Address;
+				printf("\tПосылка icmp сообщения на %s\n",
+					ADDR);
+				if (dwRetVal > 1) {
+					printf("\tПолучен %ldicmp ответ\n",
+						dwRetVal);
+					printf("\tИнформация:\n");
+				}
+				else {
+					printf("\tПолучен %ld icmp ответ\n",
+						dwRetVal);
+					printf("\tИнформация:\n");
+				}
+				printf("\tПолучено от %s\n",
+					inet_ntoa(ReplyAddr));
+				printf("\t  Статус = %ld\n",
+					pEchoReply->Status);
+				printf("\tВремя отклика  = %ld миллисекунд \n",
+					pEchoReply->RoundTripTime);
+				cout << "------------------------------------------------------" << endl;
+			}
+			else {
+				printf("\tВызов IcmpSendEcho завершился с ошибкой.\n");
+				printf("\tIcmpSendEcho ошибка: %ld\n",
+					WSAGetLastError());
+				//return -1;
+			}
+		}
+		delete []ADDR;
+		free(SendData);
+		free(ReplyBuffer);
 	}
 	DWORD bRetVal = IcmpCloseHandle(hIcmpFile);
 
